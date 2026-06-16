@@ -1,0 +1,4 @@
+# Copy this file to local.properties and fill in values
+sdk.dir=/path/to/your/Android/sdk
+CLAUDE_API_KEY=your_claude_api_key_here
+KAKAO_REST_API_KEY=your_kakao_rest_api_key_here
