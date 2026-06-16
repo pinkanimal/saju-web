@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pinkanimal.weekendcourse.data.local.PlaceEntity
 import com.pinkanimal.weekendcourse.data.remote.ExtractedPlace
+import com.pinkanimal.weekendcourse.data.remote.KakaoPlace
 import com.pinkanimal.weekendcourse.data.repository.LlmRepository
+import com.pinkanimal.weekendcourse.data.repository.MapRepository
 import com.pinkanimal.weekendcourse.data.repository.PlaceRepository
 import com.pinkanimal.weekendcourse.ocr.HeuristicGate
 import com.pinkanimal.weekendcourse.ocr.OcrEngine
@@ -24,7 +26,11 @@ sealed class ShareUiState {
     object Idle : ShareUiState()
     object Processing : ShareUiState()
     data class OcrResult(val text: String, val imageUri: Uri) : ShareUiState()
-    data class ConfirmationNeeded(val place: ExtractedPlace, val imageUri: Uri) : ShareUiState()
+    data class ConfirmationNeeded(
+        val place: ExtractedPlace,
+        val imageUri: Uri,
+        val kakaoPlace: KakaoPlace? = null
+    ) : ShareUiState()
     data class Saved(val name: String) : ShareUiState()
     data class NotAPlace(val text: String) : ShareUiState()
     data class Error(val msg: String) : ShareUiState()
@@ -35,7 +41,8 @@ class ShareViewModel @Inject constructor(
     private val ocrEngine: OcrEngine,
     private val heuristicGate: HeuristicGate,
     private val llmRepository: LlmRepository,
-    private val placeRepository: PlaceRepository
+    private val placeRepository: PlaceRepository,
+    private val mapRepository: MapRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ShareUiState>(ShareUiState.Idle)
@@ -60,7 +67,11 @@ class ShareViewModel @Inject constructor(
                         extractResult.fold(
                             onSuccess = { place ->
                                 if (place.found) {
-                                    _uiState.value = ShareUiState.ConfirmationNeeded(place, internalUri)
+                                    // Call Kakao Local search to normalize place data
+                                    val kakaoPlace = mapRepository
+                                        .searchPlace(place.name, place.address.ifBlank { null })
+                                        .getOrNull()
+                                    _uiState.value = ShareUiState.ConfirmationNeeded(place, internalUri, kakaoPlace)
                                 } else {
                                     _uiState.value = ShareUiState.NotAPlace(text)
                                 }
@@ -81,19 +92,32 @@ class ShareViewModel @Inject constructor(
         }
     }
 
-    fun confirmSave(place: ExtractedPlace, imageUri: Uri) {
+    fun confirmSave(place: ExtractedPlace, imageUri: Uri, kakaoPlace: KakaoPlace? = null) {
         viewModelScope.launch {
             try {
+                val lat = kakaoPlace?.y?.toDoubleOrNull()
+                val lng = kakaoPlace?.x?.toDoubleOrNull()
+                val region2depth = kakaoPlace?.address_name
+                    ?.split(" ")
+                    ?.getOrNull(1)
+                    ?.ifBlank { null }
+                val resolvedAddress = place.address.ifBlank {
+                    kakaoPlace?.road_address_name?.ifBlank { null }
+                }
                 val entity = PlaceEntity(
                     name = place.name,
-                    address = place.address.ifBlank { null },
+                    address = resolvedAddress,
                     category = place.category,
                     signatureMenu = place.signatureMenu.ifBlank { null },
                     priceHint = place.priceHint.ifBlank { null },
                     oneLineNote = place.oneLineNote,
                     source = "share",
                     thumbnailPath = imageUri.toString(),
-                    status = "SAVED"
+                    status = "SAVED",
+                    kakaoPlaceId = kakaoPlace?.id?.ifBlank { null },
+                    lat = lat,
+                    lng = lng,
+                    region2depth = region2depth
                 )
                 placeRepository.savePlace(entity)
                 _uiState.value = ShareUiState.Saved(place.name)

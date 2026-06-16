@@ -3,6 +3,8 @@ package com.pinkanimal.weekendcourse.di
 import android.content.Context
 import com.pinkanimal.weekendcourse.data.repository.LlmRepository
 import com.pinkanimal.weekendcourse.data.repository.LlmRepositoryImpl
+import com.pinkanimal.weekendcourse.data.repository.MapRepository
+import com.pinkanimal.weekendcourse.data.repository.MapRepositoryImpl
 import com.pinkanimal.weekendcourse.data.repository.PlaceRepository
 import com.pinkanimal.weekendcourse.data.repository.PlaceRepositoryImpl
 import com.pinkanimal.weekendcourse.ocr.OcrEngine
@@ -36,4 +38,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindPlaceRepository(impl: PlaceRepositoryImpl): PlaceRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindMapRepository(impl: MapRepositoryImpl): MapRepository
 }

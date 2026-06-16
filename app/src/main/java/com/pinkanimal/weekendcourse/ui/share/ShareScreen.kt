@@ -112,6 +112,9 @@ fun ShareScreen(
                                 PlaceInfoRow(label = "한줄평", value = state.place.oneLineNote)
                             }
                             PlaceInfoRow(label = "신뢰도", value = state.place.confidence)
+                            state.kakaoPlace?.road_address_name?.takeIf { it.isNotBlank() }?.let {
+                                PlaceInfoRow(label = "카카오 주소", value = "📍 $it")
+                            }
                         }
                     }
                     Row(
@@ -125,7 +128,7 @@ fun ShareScreen(
                             Text("취소")
                         }
                         Button(
-                            onClick = { viewModel.confirmSave(state.place, state.imageUri) },
+                            onClick = { viewModel.confirmSave(state.place, state.imageUri, state.kakaoPlace) },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("저장")
