@@ -40,12 +40,24 @@ fun ShareScreen(
                 // Will trigger LaunchedEffect
             }
             is ShareUiState.Processing -> {
+                val loadingMessages = listOf(
+                    "OCR 분석 중...",
+                    "장소 정보 추출 중...",
+                    "카카오 검색 중..."
+                )
+                var loadingIndex by remember { mutableIntStateOf(0) }
+                LaunchedEffect(Unit) {
+                    while (true) {
+                        delay(1200L)
+                        loadingIndex = (loadingIndex + 1) % loadingMessages.size
+                    }
+                }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     CircularProgressIndicator()
-                    Text("스크린샷 분석 중...")
+                    Text(loadingMessages[loadingIndex])
                 }
             }
             is ShareUiState.OcrResult -> {
@@ -59,6 +71,17 @@ fun ShareScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
+                    )
+                    // Source badge chip
+                    val sourceLabel = when (state.source.lowercase()) {
+                        "instagram" -> "Instagram"
+                        "threads" -> "Threads"
+                        "youtube" -> "YouTube"
+                        else -> "기타"
+                    }
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text(sourceLabel, style = MaterialTheme.typography.labelSmall) }
                     )
                     Text(
                         text = state.text,

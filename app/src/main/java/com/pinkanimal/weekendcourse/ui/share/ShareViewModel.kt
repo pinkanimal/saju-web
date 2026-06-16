@@ -25,7 +25,7 @@ import javax.inject.Inject
 sealed class ShareUiState {
     object Idle : ShareUiState()
     object Processing : ShareUiState()
-    data class OcrResult(val text: String, val imageUri: Uri) : ShareUiState()
+    data class OcrResult(val text: String, val imageUri: Uri, val source: String = "unknown") : ShareUiState()
     data class ConfirmationNeeded(
         val place: ExtractedPlace,
         val imageUri: Uri,
