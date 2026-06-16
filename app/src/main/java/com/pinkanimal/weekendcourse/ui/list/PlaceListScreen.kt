@@ -9,11 +9,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.pinkanimal.weekendcourse.data.local.PlaceEntity
+import com.pinkanimal.weekendcourse.ui.util.KakaoMapHelper
 
 @Composable
 fun PlaceListScreen(
@@ -74,6 +76,7 @@ fun PlaceListScreen(
 
 @Composable
 private fun PlaceCard(place: PlaceEntity, onDelete: () -> Unit) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -97,6 +100,12 @@ private fun PlaceCard(place: PlaceEntity, onDelete: () -> Unit) {
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
+                }
+                OutlinedButton(
+                    onClick = { KakaoMapHelper.openNavigation(context, place) },
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text("길안내", style = MaterialTheme.typography.labelSmall)
                 }
                 TextButton(onClick = onDelete) {
                     Text("삭제", color = MaterialTheme.colorScheme.error)

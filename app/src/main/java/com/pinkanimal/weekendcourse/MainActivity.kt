@@ -26,6 +26,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.pinkanimal.weekendcourse.ui.course.CourseScreen
 import com.pinkanimal.weekendcourse.ui.list.PlaceListScreen
 import com.pinkanimal.weekendcourse.ui.share.ShareScreen
 import com.pinkanimal.weekendcourse.ui.theme.WeekendCourseTheme
@@ -36,6 +37,7 @@ import dagger.hilt.android.AndroidEntryPoint
 sealed class Screen(val route: String, val label: String) {
     object Share : Screen("share", "공유")
     object PlaceList : Screen("place_list", "장소 목록")
+    object Course : Screen("course", "코스")
 }
 
 @AndroidEntryPoint
@@ -60,7 +62,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val sharedUri by sharedImageUri
 
-                val items = listOf(Screen.Share, Screen.PlaceList)
+                val items = listOf(Screen.Share, Screen.PlaceList, Screen.Course)
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -74,6 +76,7 @@ class MainActivity : ComponentActivity() {
                                         when (screen) {
                                             is Screen.Share -> Icon(Icons.Filled.Share, contentDescription = screen.label)
                                             is Screen.PlaceList -> Icon(Icons.Filled.List, contentDescription = screen.label)
+                                            is Screen.Course -> Icon(Icons.Filled.Notifications, contentDescription = screen.label)
                                         }
                                     },
                                     label = { Text(screen.label) },
@@ -122,6 +125,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Screen.PlaceList.route) {
                             PlaceListScreen()
+                        }
+                        composable(Screen.Course.route) {
+                            CourseScreen()
                         }
                     }
                 }
