@@ -1,19 +1,25 @@
 package com.pinkanimal.weekendcourse
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -23,6 +29,8 @@ import androidx.navigation.compose.rememberNavController
 import com.pinkanimal.weekendcourse.ui.list.PlaceListScreen
 import com.pinkanimal.weekendcourse.ui.share.ShareScreen
 import com.pinkanimal.weekendcourse.ui.theme.WeekendCourseTheme
+import com.pinkanimal.weekendcourse.work.NotificationHelper
+import com.pinkanimal.weekendcourse.work.WorkScheduler
 import dagger.hilt.android.AndroidEntryPoint
 
 sealed class Screen(val route: String, val label: String) {
@@ -35,9 +43,18 @@ class MainActivity : ComponentActivity() {
 
     private var sharedImageUri = mutableStateOf<Uri?>(null)
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* result ignored — app works without notification permission */ }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NotificationHelper.createNotificationChannel(this)
         handleIntent(intent)
+        requestNotificationPermissionIfNeeded()
+        if (sharedImageUri.value == null) {
+            WorkScheduler.scheduleFridayDigest(this)
+        }
         setContent {
             WeekendCourseTheme {
                 val navController = rememberNavController()
@@ -71,6 +88,15 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 )
+                            }
+                        }
+                    },
+                    floatingActionButton = {
+                        if (BuildConfig.DEBUG) {
+                            FloatingActionButton(
+                                onClick = { WorkScheduler.triggerNow(this@MainActivity) }
+                            ) {
+                                Icon(Icons.Filled.Notifications, contentDescription = "테스트 알림")
                             }
                         }
                     }
@@ -107,6 +133,16 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIntent(intent)
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 
     private fun handleIntent(intent: Intent?) {

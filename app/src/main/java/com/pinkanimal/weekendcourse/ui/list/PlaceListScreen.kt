@@ -15,38 +15,56 @@ import com.pinkanimal.weekendcourse.data.local.PlaceEntity
 
 @Composable
 fun PlaceListScreen(
-    viewModel: PlaceListViewModel = hiltViewModel()
+    viewModel: PlaceListViewModel = hiltViewModel(),
+    onDebugTrigger: (() -> Unit)? = null
 ) {
     val places by viewModel.places.collectAsState()
 
-    if (places.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (places.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "저장된 장소가 없어요",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = "스크린샷을 공유해서 장소를 추가해보세요!",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "저장된 장소가 없어요",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "스크린샷을 공유해서 장소를 추가해보세요!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(places, key = { it.id }) { place ->
+                    PlaceCard(place = place, onDelete = { viewModel.deletePlace(place) })
+                }
             }
         }
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(places, key = { it.id }) { place ->
-                PlaceCard(place = place, onDelete = { viewModel.deletePlace(place) })
+
+        // Debug trigger button (only in DEBUG builds, passed from MainActivity)
+        if (onDebugTrigger != null) {
+            FloatingActionButton(
+                onClick = onDebugTrigger,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Filled.Notifications,
+                    contentDescription = "지금 코스 만들기"
+                )
             }
         }
     }
